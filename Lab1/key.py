@@ -8,10 +8,10 @@ class Key:
     A simple key class that generates, reads, and writes keys.
     """
 
-    def __init__(self,key_len):
+    def __init__(self):
         # do we need to initialize anything?
-        self.key_len=key_len
-        assert NotImplementedError # remove this line after your implementation
+        pass
+        #assert NotImplementedError # remove this line after your implementation
 
     def gen(self, key_len: int) -> bytes:
         # TODO: generate a random key
@@ -31,7 +31,8 @@ class Key:
         # TODO: write key to file
         with open(key_file, 'wb') as file:
             file.write(key)
-        assert NotImplementedError # remove this line after your implementation
+        return file
+        #assert NotImplementedError # remove this line after your implementation
 
 
 if __name__ == '__main__':
