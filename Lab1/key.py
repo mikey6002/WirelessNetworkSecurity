@@ -31,7 +31,7 @@ class Key:
         # TODO: write key to file
         with open(key_file, 'wb') as file:
             file.write(key)
-        return file
+        #return file
         #assert NotImplementedError # remove this line after your implementation
 
 
