@@ -36,4 +36,6 @@ if __name__ == '__main__':
     response = client.receive()
     print(f"Received response: {response.decode('ascii')}")
 
+    #looping client
+
     client.close()

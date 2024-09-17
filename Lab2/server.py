@@ -32,7 +32,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '127.0.0.1', 9999 # change ports
+    HOST, PORT = '10.110.50.26', 65000 # change ports
 
     server = Server(HOST, PORT)
     server.start()
@@ -46,5 +46,9 @@ if __name__ == '__main__':
 
     server.send("Hello from server!")
 
-    server.close()
+
+    #looping chat
+    #while server == True:
+
+    #server.close()
     
