@@ -23,7 +23,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '127.0.0.1', 9999
+    HOST, PORT = '192.168.1.7', 65000 # change ports
 
     client = Client(HOST, PORT)
     client.connect()
@@ -37,5 +37,17 @@ if __name__ == '__main__':
     print(f"Received response: {response.decode('ascii')}")
 
     #looping client
+    message = ""
+    while True:
+        message = input("Enter a message or ('exit') to quit ")
+        client.send(message)
+
+        if message == "exit":
+            print("exiting chat")
+            break
+
+        response =client.receive()
+        print(f"Received response: {response.decode('ascii')}")
+
 
     client.close()

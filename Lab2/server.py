@@ -32,7 +32,8 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.110.50.26', 65000 # change ports
+    #shared hot and port
+    HOST, PORT = '192.168.1.7', 65000 # change ports
 
     server = Server(HOST, PORT)
     server.start()
@@ -46,9 +47,12 @@ if __name__ == '__main__':
 
     server.send("Hello from server!")
 
-
     #looping chat
-    #while server == True:
-
-    #server.close()
+    while True:
+        message = server.receive()
+        print(f"Received message: {message.decode('ascii')}")
+        if not message:
+            print("Client Has Disconnected")
+            break
+    server.close()
     
