@@ -50,9 +50,15 @@ if __name__ == '__main__':
     #looping chat
     while True:
         message = server.receive()
-        print(f"Received message: {message.decode('ascii')}")
-        if not message:
-            print("Client Has Disconnected")
+        print(f"Received message from client: {message}")
+
+        if message.lower() == "exit":
+            print("Ending chat...")
+            server.send("Ending chat...")
             break
+
+        response = "Message Saved to server: "
+        server.send(response)
+        print(f"Response to client: {response}")
     server.close()
     

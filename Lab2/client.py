@@ -37,17 +37,20 @@ if __name__ == '__main__':
     print(f"Received response: {response.decode('ascii')}")
 
     #looping client
-    message = ""
     while True:
-        message = input("Enter a message or ('exit') to quit ")
-        client.send(message)
+        # User input
+        message = input("Enter message (type 'exit' to quit): ")
 
-        if message == "exit":
-            print("exiting chat")
+        if message.lower() == "exit":
+            print("Ending chat...")
+            client.send(message)
             break
 
-        response =client.receive()
-        print(f"Received response: {response.decode('ascii')}")
+        client.send(message)
+        print(f"Sent message: {message}")
 
+        response = client.receive()
+        print(f"Received response from server: {response}")
 
+    # Close the connection
     client.close()
