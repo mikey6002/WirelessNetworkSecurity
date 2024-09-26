@@ -1,5 +1,7 @@
 
 import socket
+from aes import AES
+
 
 
 class Server:
@@ -32,9 +34,15 @@ class Server:
 
 
 if __name__ == '__main__':
-    #shared hot and port
-    HOST, PORT = '192.168.1.7', 65000 # change ports
+    #shared host and port
+    HOST, PORT = '192.168.56.1', 65000 # change ports
 
+    # Load the AES encryption key from key.bytes
+    with open("key.bytes", "rb") as key_file:
+        key = key_file.read()
+        
+    aes = AES(key)
+    
     server = Server(HOST, PORT)
     server.start()
     print(f"Server started at {HOST}:{PORT}")
@@ -50,15 +58,21 @@ if __name__ == '__main__':
     #looping chat
     while True:
         message = server.receive()
-        print(f"Received message from client: {message}")
-
+        msg = aes.decrypt(message)
+        print(f"\n[CLIENT] {msg}")
+        
+        msg = input("[SERVER] Enter message (type 'exit' to quit")
+        msg_enc = aes.encrypt(msg)
+        
+        
         if message.lower() == "exit":
-            print("Ending chat...")
-            server.send("Ending chat...")
+            print("[SERVER] Ending chat...")
+            server.send(msg_enc)
             break
-
-        response = "Message Saved to server: "
-        server.send(response)
-        print(f"Response to client: {response}")
+        
+        response = "Message Recieved: "
+        server.send(aes.encrypt(response))
+        #server.send(response)
+        print(f"[SERVER] sent to client: {response}")
     server.close()
     
