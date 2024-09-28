@@ -63,8 +63,8 @@ if __name__ == '__main__':
             server.send(msg, key)
             break
         
-        response = "Message Received: "
-        server.send(response, key)
-        print(f"[SERVER] sent to client: {response}")
+        #send message to client
+        server.send(msg, key) 
+        print(f"[SERVER] sent to client: {msg}")
 
     server.close()

@@ -12,13 +12,13 @@ class Client:
         self.client.connect((self.host, self.port))
 
     def send(self, message: str, key: bytes):
-        aes = AES(key)  # Create a new AES instance
+        aes = AES(key)  # create a AES instance
         encrypted_message = aes.encrypt(message)  # Encrypt the message
         self.client.sendall(encrypted_message)
 
     def receive(self, key: bytes):
         data = self.client.recv(1024)
-        aes = AES(key)  # Create a new AES instance for decryption
+        aes = AES(key) # create a AES instance
         return aes.decrypt(data)
 
     def close(self):
