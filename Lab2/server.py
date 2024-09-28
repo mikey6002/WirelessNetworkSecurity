@@ -1,14 +1,11 @@
-
 import socket
 from aes import AES
-
 
 
 class Server:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-
         self.server = None
         self.client = None
 
@@ -21,12 +18,15 @@ class Server:
         self.client, addr = self.server.accept()
         return addr
     
-    def receive(self, buffer_size=1024):
-        return self.client.recv(buffer_size)
+    def receive(self, key: bytes):
+        data = self.client.recv(1024)
+        aes = AES(key)  # Create a new AES instance for decryption
+        return aes.decrypt(data)
     
-    def send(self, message: str):
-        message_bytes = bytes(message, 'ascii')
-        self.client.sendall(message_bytes)
+    def send(self, message: str, key: bytes):
+        aes = AES(key)  # Create a new AES instance for encryption
+        encrypted_message = aes.encrypt(message)  # Encrypt the message
+        self.client.sendall(encrypted_message)
 
     def close(self):
         self.client.close()
@@ -34,15 +34,11 @@ class Server:
 
 
 if __name__ == '__main__':
-    #shared host and port
-    HOST, PORT = '192.168.56.1', 65000 # change ports
+    HOST, PORT = '192.168.56.1', 65000  # change ports
 
-    # Load the AES encryption key from key.bytes
     with open("key.bytes", "rb") as key_file:
         key = key_file.read()
         
-    aes = AES(key)
-    
     server = Server(HOST, PORT)
     server.start()
     print(f"Server started at {HOST}:{PORT}")
@@ -50,29 +46,25 @@ if __name__ == '__main__':
     addr = server.accept()
     print(f"Accepted connection from {addr}")
 
-    message = server.receive()
-    print(f"Received message: {message.decode('ascii')}")
+    message = server.receive(key)
+    print(f"Received message: {message}")
 
-    server.send("Hello from server!")
+    server.send("Hello from server!", key)
 
-    #looping chat
+    # looping chat
     while True:
-        message = server.receive()
-        msg = aes.decrypt(message)
-        print(f"\n[CLIENT] {msg}")
+        message = server.receive(key)
+        print(f"\n[CLIENT] {message}")
+
+        msg = input("[SERVER] Enter message (type 'exit' to quit): ")
         
-        msg = input("[SERVER] Enter message (type 'exit' to quit")
-        msg_enc = aes.encrypt(msg)
-        
-        
-        if message.lower() == "exit":
+        if msg.lower() == "exit":
             print("[SERVER] Ending chat...")
-            server.send(msg_enc)
+            server.send(msg, key)
             break
         
-        response = "Message Recieved: "
-        server.send(aes.encrypt(response))
-        #server.send(response)
+        response = "Message Received: "
+        server.send(response, key)
         print(f"[SERVER] sent to client: {response}")
+
     server.close()
-    
