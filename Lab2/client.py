@@ -16,7 +16,7 @@ class Client:
         encrypted_message = aes.encrypt(message)  # Encrypt the message
         self.client.sendall(encrypted_message)
 
-    def receive(self, key: bytes):
+    def receive(self, key: bytes) -> str:
         data = self.client.recv(1024)
         aes = AES(key) # create a AES instance
         return aes.decrypt(data)

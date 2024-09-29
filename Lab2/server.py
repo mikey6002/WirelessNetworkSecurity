@@ -18,7 +18,7 @@ class Server:
         self.client, addr = self.server.accept()
         return addr
     
-    def receive(self, key: bytes):
+    def receive(self, key: bytes) -> str:
         data = self.client.recv(1024)
         aes = AES(key)  # Create a new AES instance for decryption
         return aes.decrypt(data)
