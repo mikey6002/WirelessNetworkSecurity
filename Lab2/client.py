@@ -14,7 +14,7 @@ class Client:
     def send(self, message: str, key: bytes):
         # Hash the message
         message_hash = hashlib.sha256(message.encode()).hexdigest()
-        message_with_hash = f"{message}||{message_hash}"  # adding has to the end of message
+        message_with_hash = f"{message}||{message_hash}"  # append adding hash to the end of message
         
         aes = AES(key)  # create a AES instance
         encrypted_message = aes.encrypt(message_with_hash)  # Encrypt the message
