@@ -1,6 +1,6 @@
 import socket
 from aes import AES
-
+import hashlib
 
 class Client:
     def __init__(self, host, port):
@@ -12,21 +12,40 @@ class Client:
         self.client.connect((self.host, self.port))
 
     def send(self, message: str, key: bytes):
+        # Hash the message
+        message_hash = hashlib.sha256(message.encode()).hexdigest()
+        message_with_hash = f"{message}||{message_hash}"  # adding has to the end of message
+        
         aes = AES(key)  # create a AES instance
-        encrypted_message = aes.encrypt(message)  # Encrypt the message
+        encrypted_message = aes.encrypt(message_with_hash)  # Encrypt the message
         self.client.sendall(encrypted_message)
 
     def receive(self, key: bytes) -> str:
         data = self.client.recv(1024)
         aes = AES(key) # create a AES instance
-        return aes.decrypt(data)
+        decrypted_message = aes.decrypt(data)
+        
+        # try and split the message and hash
+        try:
+            message, received_hash = decrypted_message.split("||")
+            # vrify integrity by comparing the hashes of the messages
+            computed_hash = hashlib.sha256(message.encode()).hexdigest()
+            if computed_hash == received_hash:
+                print("[CLIENT] Message integrity is all clear.")
+            else:
+                print("[CLIENT] Message compromised!")
+        except ValueError:
+            message = decrypted_message
+            print("[CLIENT] No hash received to verify integrity.")
+        
+        return message
 
     def close(self):
         self.client.close()
 
 
 if __name__ == '__main__':
-    HOST, PORT = '192.168.56.1', 65000  # change ports
+    HOST, PORT = '192.168.1.7', 65000  # change ports
     
     with open("key.bytes", "rb") as key_file:
         key = key_file.read()
