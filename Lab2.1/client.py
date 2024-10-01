@@ -39,7 +39,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '192.168.1.7', 65000
+    HOST, PORT = '192.168.56.1', 65000
 
     #initalize jey object
     key = Key()
