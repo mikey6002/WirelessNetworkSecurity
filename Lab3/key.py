@@ -32,7 +32,7 @@ class Key:
                     return False
             return True
         
-        for _ in range(5):  # number of tests
+        for j in range(5):  # number of tests
             a = random.randrange(2, num - 1)
             if try_composite(a):
                 return False
