@@ -1,7 +1,7 @@
 import random
 import math 
 
-# Predefined small prime numbers
+
 small_primes = [
     3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 
     37, 41, 43, 47, 53, 59, 61, 67, 71, 73,
@@ -18,7 +18,7 @@ def is_prime(n):
     return True
 
 def generate_prime():
-    """Select a random prime from the list of small primes."""
+    #get random number
     return random.choice(small_primes)
 
 def mod_inverse(a, m):
@@ -37,15 +37,15 @@ def mod_inverse(a, m):
         return x % m
 
 def generate_keypair():
-    """Generate a pair of RSA keys using small primes."""
+    #generate keys
     p = generate_prime()
     q = generate_prime()
-    while p == q:  # Ensure p and q are distinct
+    while p == q: #make sure p q not the same
         q = generate_prime()
     n = p * q
     phi = (p - 1) * (q - 1)
     
-    e = 5  # Choose a small prime for e
+    e = 5  #small e 
     while math.gcd(e, phi) != 1:
         e += 2  # Increment e to find a valid one
     d = mod_inverse(e, phi)
@@ -66,17 +66,44 @@ def mod_pow(base, exponent, modulus):
 def encrypt(public_key, plaintext):
     """Encrypt a message using the public key."""
     e, n = public_key
-    return [mod_pow(ord(char), e, n) for char in plaintext]
+    encrypted_message = []
+    
+    # Loop through each character in the plaintext
+    for char in plaintext:
+        # Get the ASCII value of the character
+        ascii_value = ord(char)
+        
+        # Encrypt the character using modular exponentiation
+        encrypted_char = mod_pow(ascii_value, e, n)
+        
+        # Add the encrypted character to the result list
+        encrypted_message.append(encrypted_char)
+    
+    return encrypted_message
 
 def decrypt(private_key, ciphertext):
     """Decrypt a message using the private key."""
     d, n = private_key
-    return ''.join([chr(mod_pow(char, d, n)) for char in ciphertext])
+    decrypted_message = []
+    
+    # Loop through each encrypted number in the ciphertext
+    for encrypted_char in ciphertext:
+        # Decrypt the number using modular exponentiation
+        decrypted_ascii = mod_pow(encrypted_char, d, n)
+        
+        # Convert the decrypted ASCII value back to a character
+        decrypted_char = chr(decrypted_ascii)
+        
+        # Add the decrypted character to the result list
+        decrypted_message.append(decrypted_char)
+    
+    # Join the list of characters into a single string
+    return ''.join(decrypted_message)
 
-# Example usage
+
 if __name__ == "__main__":
     public_key, private_key = generate_keypair()
-    message = "Hello, RSA!"
+    message = "Hello World"
     encrypted_msg = encrypt(public_key, message)
     decrypted_msg = decrypt(private_key, encrypted_msg)
 
