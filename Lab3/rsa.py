@@ -20,8 +20,9 @@ def mod_inverse(a, m):#e,phi
         if a == 0:
             return (b, 0, 1) #base case a = 0, b= b
         else:
-            g, y, x = egcd(b % a, a) #recursive step to keep finding gcd
-            return (g, x - (b // a) * y, y)
+            #recursive step to keep finding gcd
+            g, y, x = egcd(b % a, a) # g gcd orginal, y coefficient a, x coefficient b [ax+by=gcd(a,b)]
+            return (g, x - (b // a) * y, y) # adjust coefficient a 
 
     g, x, _ = egcd(a, m) #find GCD 
     
@@ -56,7 +57,7 @@ def mod_pow(base, exponent, modulus):
         if exponent % 2 == 1:
             result = (result * base) % modulus
         exponent = exponent >> 1 # right shift
-        base = (base * base) % modulus
+        base = (base * base) % modulus # square base then mod 
     return result
 
 def encrypt(public_key, plaintext):
