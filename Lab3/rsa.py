@@ -9,7 +9,7 @@ small_primes = [
 ]
 
 def is_prime(n):
-    """Check if a number is prime."""
+    #chck prime number
     if n < 2:
         return False
     for i in range(2, int(math.sqrt(n)) + 1):
@@ -21,16 +21,17 @@ def generate_prime():
     #get random number
     return random.choice(small_primes)
 
-def mod_inverse(a, m):
-    """Compute the modular inverse of a with respect to m."""
+
+#euclidean alogorithm gcd compute 'd'
+def mod_inverse(a, m):#e,phi
     def egcd(a, b):
         if a == 0:
             return (b, 0, 1)
         else:
-            g, y, x = egcd(b % a, a)
+            g, y, x = egcd(b % a, a) #recursive step to keep finding gcd
             return (g, x - (b // a) * y, y)
 
-    g, x, _ = egcd(a, m)
+    g, x, _ = egcd(a, m) #find GCD 
     if g != 1:
         raise Exception('Modular inverse does not exist')
     else:
@@ -46,14 +47,14 @@ def generate_keypair():
     phi = (p - 1) * (q - 1)
     
     e = 5  #small e 
-    while math.gcd(e, phi) != 1:
+    while math.gcd(e, phi) != 1: # is e co prime 
         e += 2  # Increment e to find a valid one
     d = mod_inverse(e, phi)
     
     return ((e, n), (d, n))
 
 def mod_pow(base, exponent, modulus):
-    """Perform modular exponentiation."""
+    #modulat expnentiation
     result = 1
     base = base % modulus
     while exponent > 0:
@@ -64,13 +65,11 @@ def mod_pow(base, exponent, modulus):
     return result
 
 def encrypt(public_key, plaintext):
-    """Encrypt a message using the public key."""
     e, n = public_key
     encrypted_message = []
     
-    # Loop through each character in the plaintext
     for char in plaintext:
-        # Get the ASCII value of the character
+       # ascii value of the char
         ascii_value = ord(char)
         
         # Encrypt the character using modular exponentiation
@@ -82,11 +81,10 @@ def encrypt(public_key, plaintext):
     return encrypted_message
 
 def decrypt(private_key, ciphertext):
-    """Decrypt a message using the private key."""
     d, n = private_key
     decrypted_message = []
     
-    # Loop through each encrypted number in the ciphertext
+  
     for encrypted_char in ciphertext:
         # Decrypt the number using modular exponentiation
         decrypted_ascii = mod_pow(encrypted_char, d, n)
