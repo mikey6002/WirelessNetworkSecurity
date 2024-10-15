@@ -56,11 +56,11 @@ def generate_keypair():
 def mod_pow(base, exponent, modulus):
     #modulat expnentiation
     result = 1
-    base = base % modulus
+    base = base % modulus #reduce base if larger than mod
     while exponent > 0:
         if exponent % 2 == 1:
             result = (result * base) % modulus
-        exponent = exponent >> 1
+        exponent = exponent >> 1 # right shift
         base = (base * base) % modulus
     return result
 
@@ -86,13 +86,13 @@ def decrypt(private_key, ciphertext):
     
   
     for encrypted_char in ciphertext:
-        # Decrypt the number using modular exponentiation
+        # Decrypt number using modular exponentiation
         decrypted_ascii = mod_pow(encrypted_char, d, n)
         
-        # Convert the decrypted ASCII value back to a character
+        # Convert decrypted ASCII value back to a character
         decrypted_char = chr(decrypted_ascii)
         
-        # Add the decrypted character to the result list
+        #decrypted character to the result list
         decrypted_message.append(decrypted_char)
     
     # Join the list of characters into a single string
