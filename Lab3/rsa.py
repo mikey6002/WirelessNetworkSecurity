@@ -8,14 +8,6 @@ small_primes = [
     79, 83, 89, 97, 101, 103, 107, 109, 113, 127
 ]
 
-def is_prime(n):
-    #chck prime number
-    if n < 2:
-        return False
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            return False
-    return True
 
 def generate_prime():
     #get random number
@@ -32,6 +24,7 @@ def mod_inverse(a, m):#e,phi
             return (g, x - (b // a) * y, y)
 
     g, x, _ = egcd(a, m) #find GCD 
+    
     if g != 1:
         raise Exception('Modular inverse does not exist')
     else:
@@ -40,7 +33,9 @@ def mod_inverse(a, m):#e,phi
 def generate_keypair():
     #generate keys
     p = generate_prime()
+    print(p)
     q = generate_prime()
+    print(q)
     while p == q: #make sure p q not the same
         q = generate_prime()
     n = p * q
