@@ -18,7 +18,7 @@ def generate_prime():
 def mod_inverse(a, m):#e,phi
     def egcd(a, b):
         if a == 0:
-            return (b, 0, 1)
+            return (b, 0, 1) #base case a = 0, b= b
         else:
             g, y, x = egcd(b % a, a) #recursive step to keep finding gcd
             return (g, x - (b // a) * y, y)
