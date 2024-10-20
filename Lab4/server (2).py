@@ -1,7 +1,6 @@
 import socket
 from rsa import RSAEncryptor
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
+from aes import AES  # Import the AES class for decryption
 
 class Server:
     def __init__(self, host, port):
@@ -9,14 +8,14 @@ class Server:
         self.port = port
         self.server = None
         self.client = None
-        
-        # Generate RSA key pair
-        self.rsa_cryptor = RSAEncryptor()
+        self.rsa_cryptor = RSAEncryptor()  # RSA for key exchange
+        self.aes_key = None  # This will hold the AES key for message encryption
 
     def start(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
         self.server.listen(5)
+        print(f"Server is listening on {self.host}:{self.port}")
 
     def accept(self):
         self.client, addr = self.server.accept()
@@ -27,28 +26,25 @@ class Server:
         public_key_pem = self.rsa_cryptor.serialize_public_key()
         self.client.sendall(public_key_pem)
 
-    def receive(self, buffer_size=1024):
-        encrypted_message = self.client.recv(buffer_size)
-        decrypted_message = self.rsa_cryptor.decrypt(encrypted_message)
+    def receive_aes_key(self):
+        encrypted_aes_key = self.client.recv(1024)  # Adjust buffer size as needed
+        # Decrypt the AES key using the server's private key
+        self.aes_key = self.rsa_cryptor.decrypt(encrypted_aes_key)  # This will return bytes
+        print("AES key received and decrypted.")
 
-        try:
-            message, hash_value = decrypted_message.split("|")
-        except ValueError:
-            print("Error: Message format is incorrect.")
-            return None, None  # Safely handle the error
+    def send(self, message: str):
+        if not self.aes_key:
+            raise ValueError("AES key has not been set. Cannot send message.")
 
-        return message, hash_value
-
-    def send(self, message: str, hash_value: str):
-        message_with_hash = message + "|" + hash_value
-        encrypted_message = self.rsa_cryptor.encrypt(message_with_hash)
+        aes_cryptor = AES(self.aes_key)
+        encrypted_message = aes_cryptor.encrypt(message)
         self.client.sendall(encrypted_message)
 
-    def hash_message(self, message: str) -> str:
-        digest = hashes.Hash(hashes.SHA256())
-        combined = message.encode('ascii')
-        digest.update(combined)
-        return digest.finalize().hex()
+    def receive(self, buffer_size=1024):
+        encrypted_message = self.client.recv(buffer_size)
+        aes_cryptor = AES(self.aes_key)  # Use the AES key for decryption
+        decrypted_message = aes_cryptor.decrypt(encrypted_message)
+        return decrypted_message
 
     def close(self):
         self.client.close()
@@ -56,12 +52,11 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '192.168.56.1', 65000
+    HOST, PORT = '192.168.1.7', 65000  # Change to the correct IP address for your server
 
     # Initialize server and generate the RSA key pair
     server = Server(HOST, PORT)
     server.start()
-    print(f"Server started at {HOST}:{PORT}")
 
     addr = server.accept()
     print(f"Accepted connection from {addr}")
@@ -69,20 +64,17 @@ if __name__ == '__main__':
     # Send the public key to the client
     server.send_public_key()
 
-    while True:
-        received_message, received_hash = server.receive()
+    # Receive the AES key from the client
+    server.receive_aes_key()
 
-        if not received_message:  # Handle case when the message format is incorrect
+    while True:
+        # Receive message
+        received_message = server.receive()
+        if not received_message:  # Handle case when the message is empty
             print("Failed to receive a valid message.")
             break
 
-        recalculated_hash = server.hash_message(received_message)
-
-        if recalculated_hash != received_hash:
-            print("Warning: Message integrity check failed!")
-            break
-        else:
-            print(f"Message received: {received_message}, received hash: {received_hash}")
+        print(f"Message received: {received_message}")
 
         if received_message.lower() == 'end chat':
             print("Chat ended by client.")

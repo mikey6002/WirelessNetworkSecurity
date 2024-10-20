@@ -34,8 +34,9 @@ class RSAEncryptor:
         )
         return ciphertext
     
-    def decrypt(self, ciphertext: bytes) -> str:
-        decrypted_bytes = self.private_key.decrypt(
+    def decrypt(self, ciphertext: bytes) -> bytes:
+        # Decrypt the ciphertext using the private key
+        decrypted = self.private_key.decrypt(
             ciphertext,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -43,8 +44,7 @@ class RSAEncryptor:
                 label=None
             )
         )
-        decrypted = bytes.decode(decrypted_bytes, 'ascii')
-        return decrypted
+        return decrypted  # Return as bytes instead of decoding to a string
 
     def serialize_private_key(self):
         return self.private_key.private_bytes(

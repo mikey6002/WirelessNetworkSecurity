@@ -1,8 +1,11 @@
 import socket
 from cryptography.hazmat.primitives import serialization
 from rsa import RSAEncryptor
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+import os
+from cryptography.hazmat.primitives.asymmetric import padding
+from aes import AES  # Import the AES class from aes.py
+import random
 
 
 class Client:
@@ -11,7 +14,7 @@ class Client:
         self.port = port
         self.client = None
         self.server_public_key = None  # Will hold the server's public key
-        self.rsa_cryptor = RSAEncryptor()  # Client will have its own key pair for decryption
+        self.aes_key = None  # This will hold the AES key for message encryption
 
     def connect(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,24 +24,32 @@ class Client:
         public_key_pem = self.client.recv(1024)  # Adjust buffer size as needed
         self.server_public_key = serialization.load_pem_public_key(public_key_pem)
 
-    def send(self, message: str, message_hash: str):
-        # Combine the message and hash
-        message_with_hash = message + "|" + message_hash
-        
-        # Encrypt the combined message using the server's public key
-        ciphertext = self.server_public_key.encrypt(
-            message_with_hash.encode('ascii'),
+    def send_aes_key(self):
+        # Encrypt the AES key using the server's RSA public key
+        encrypted_aes_key = self.server_public_key.encrypt(
+            self.aes_key,
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
                 label=None
             )
         )
-        self.client.sendall(ciphertext)
+        # Send the encrypted AES key to the server
+        self.client.sendall(encrypted_aes_key)
+
+    def send(self, message: str):
+        if not self.aes_key:
+            raise ValueError("AES key has not been set. Cannot send message.")
+
+        # Encrypt the message using AES
+        aes_cryptor = AES(self.aes_key)
+        encrypted_message = aes_cryptor.encrypt(message)
+        self.client.sendall(encrypted_message)
 
     def receive(self, buffer_size=1024):
         encrypted_message = self.client.recv(buffer_size)
-        decrypted_message = self.rsa_cryptor.decrypt(encrypted_message)
+        aes_cryptor = AES(self.aes_key)  # Use the AES key for decryption
+        decrypted_message = aes_cryptor.decrypt(encrypted_message)
         return decrypted_message
 
     def hash_message(self, message: str) -> str:
@@ -57,11 +68,17 @@ if __name__ == '__main__':
     client.connect()
     print(f"Connected to server at {HOST}:{PORT}")
 
+    # Generate a random AES key (256 bits)
+    key_len = 256
+    client.aes_key = bytes([random.randint(0, 255) for _ in range(key_len // 8)])
+
+    # Send the AES key to the server
+    client.send_aes_key()
+
     while True:
         # Send message
         message_to_send = input("You: ")
-        message_hash = client.hash_message(message_to_send)
-        client.send(message_to_send, message_hash)
+        client.send(message_to_send)
 
         if message_to_send.lower() == 'end chat':
             print("Chat ended by client.")
@@ -69,22 +86,6 @@ if __name__ == '__main__':
 
         # Receive message
         received_data = client.receive()
-        try:
-            received_message, received_hash = received_data.split("|")
-        except ValueError:
-            print("Error: Received data format is incorrect.")
-            break
-
-        recalculated_hash = client.hash_message(received_message)
-        if recalculated_hash != received_hash:
-            print("Warning: Message integrity was compromised!")
-            break
-        else:
-            # Message integrity verified
-            print(f"Message received: {received_message}, received hash: {received_hash}")
-
-        if received_message.lower() == 'end chat':
-            print("Chat ended by server.")
-            break
+        print(f"Message received: {received_data}")
 
     client.close()
