@@ -76,6 +76,9 @@ if __name__ == '__main__':
 
         print(f"Message received: {received_message}")
 
+        message_to_send = input("You: ")
+        server.send(message_to_send)
+
         if received_message.lower() == 'end chat':
             print("Chat ended by client.")
             break
