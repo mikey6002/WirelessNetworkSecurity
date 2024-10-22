@@ -1,6 +1,6 @@
 import socket
 from rsa import RSAEncryptor
-from aes import AES  # Import the AES class for decryption
+from aes import AES 
 
 class Server:
     def __init__(self, host, port):
@@ -27,7 +27,7 @@ class Server:
         self.client.sendall(public_key_pem)
 
     def receive_aes_key(self):
-        encrypted_aes_key = self.client.recv(1024)  # Adjust buffer size as needed
+        encrypted_aes_key = self.client.recv(1024)  #buffer size 
         # Decrypt the AES key using the server's private key
         self.aes_key = self.rsa_cryptor.decrypt(encrypted_aes_key)  # This will return bytes
         print("AES key received and decrypted.")
@@ -78,9 +78,9 @@ if __name__ == '__main__':
 
         message_to_send = input("You: ")
         server.send(message_to_send)
-
-        if received_message.lower() == 'end chat':
-            print("Chat ended by client.")
+        
+        if message_to_send.lower() == "end chat" or received_message.lower() == 'end chat':
+            print("Chat ended.")
             break
 
     server.close()

@@ -4,7 +4,7 @@ from rsa import RSAEncryptor
 from cryptography.hazmat.primitives import hashes
 import os
 from cryptography.hazmat.primitives.asymmetric import padding
-from aes import AES  # Import the AES class from aes.py
+from aes import AES  
 import random
 
 
@@ -42,7 +42,7 @@ class Client:
             raise ValueError("AES key has not been set. Cannot send message.")
 
         # Encrypt the message using AES
-        aes_cryptor = AES(self.aes_key)
+        aes_cryptor = AES(self.aes_key) 
         encrypted_message = aes_cryptor.encrypt(message)
         self.client.sendall(encrypted_message)
 
@@ -87,5 +87,8 @@ if __name__ == '__main__':
         # Receive message
         received_data = client.receive()
         print(f"Message received: {received_data}")
+        if received_data == 'end chat':
+            print("Chat ended by server.")
+            break
 
     client.close()

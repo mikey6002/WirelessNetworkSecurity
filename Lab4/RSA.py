@@ -61,7 +61,6 @@ class RSAEncryptor:
 
 
 if __name__ == '__main__':
-
     # Instantiate RSA encryptor (generates a key pair)
     rsa_cryptor = RSAEncryptor()
 
@@ -74,11 +73,14 @@ if __name__ == '__main__':
     # Decrypt the ciphertext
     decrypted = rsa_cryptor.decrypt(ciphertext)
 
+    # Convert the decrypted bytes back to a string
+    decrypted_str = decrypted.decode('ascii')
+
     # Check if everything works
     print(f"Plaintext: {plaintext}")
     print(f"Ciphertext: {ciphertext.hex()}")
-    print(f"Decrypted: {decrypted}")
-    assert plaintext == decrypted, "Incorrect decryption!"
+    print(f"Decrypted: {decrypted_str}")
+    assert plaintext == decrypted_str, "Incorrect decryption!"
 
     # Serialize keys if needed
     private_key_pem = rsa_cryptor.serialize_private_key()
