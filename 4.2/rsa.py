@@ -101,7 +101,7 @@ if __name__ == '__main__':
     print(f"Public key (e, n): ({rsa_instance.e}, {rsa_instance.n})")
     print(f"Private key (d, n): ({rsa_instance.d}, {rsa_instance.n})")
 
-    plaintext = 74934551197837615838790984411286222358639449529875366475640826113004513675453
+    plaintext = 1234567890123456789012345678901234567890
     print(f"Original message: {plaintext}")
 
     # Encrypt the message
