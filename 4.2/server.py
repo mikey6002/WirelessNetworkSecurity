@@ -46,13 +46,6 @@ class Server:
         encrypted_message = cryptor.encrypt(message_with_hash)
         self.client.sendall(encrypted_message)
 
-    def hash_message(self, message: str, key: bytes) -> str:
-        # Generates SHA-256 hash for the message and key combined
-        digest = hashes.Hash(hashes.SHA256())
-        combined = message.encode('ascii') + key
-        digest.update(combined)
-        return digest.finalize().hex()
-
     def exchange_keys(self):
         # Handles key exchange with the client using RSA encryption
         # Send server's RSA public key to client
@@ -64,6 +57,14 @@ class Server:
         aes_key_as_int = self.rsa.decrypt(encrypted_aes_key)
         self.key_bytes = aes_key_as_int.to_bytes((aes_key_as_int.bit_length() + 7) // 8, byteorder='big')
         print(f"Established AES session key: {self.key_bytes}")
+
+    def hash_message(self, message: str, key: bytes) -> str:
+        # Generates SHA-256 hash for the message and key combined
+        digest = hashes.Hash(hashes.SHA256())
+        combined = message.encode('ascii') + key
+        digest.update(combined)
+        return digest.finalize().hex()
+
 
     def close(self):
         # Closes client and server sockets
