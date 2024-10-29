@@ -62,7 +62,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '192.168.1.7', 65000  # Change this if the server is on a different host
+    HOST, PORT = '10.110.54.166', 65000  # Change this if the server is on a different host
 
     client = Client(HOST, PORT)
     client.connect()

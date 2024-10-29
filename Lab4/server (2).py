@@ -52,7 +52,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '192.168.1.7', 65000  # Change to the correct IP address for your server
+    HOST, PORT = '10.110.54.166', 65000 
 
     # Initialize server and generate the RSA key pair
     server = Server(HOST, PORT)
