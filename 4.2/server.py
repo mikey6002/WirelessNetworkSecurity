@@ -15,7 +15,7 @@ class Server:
 
         # RSA key pair for encryption/decryption
         self.rsa = RSA(65537)  # Public exponent
-        self.public_key = (self.rsa.e, self.rsa.n)  # Public key
+        self.public_key = (self.rsa.public_expo, self.rsa.n)  # Public key
         self.private_key = (self.rsa.d, self.rsa.n)  # Private key
         self.aes_key = None  # Session AES key
 

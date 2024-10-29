@@ -1,7 +1,8 @@
 import random
 from math import gcd
 
-def is_prime(n, k=5):
+
+def is_prime(n, num_rounds_k=5):
     #Miller-Rabin prime test.
     if n <= 1:
         return False
@@ -10,14 +11,14 @@ def is_prime(n, k=5):
     if n % 2 == 0:
         return False
 
-    # Express n-1 as 2^r * d
+    # expression n-1 as 2^r * d
     r, d = 0, n - 1
     while d % 2 == 0:
         d //= 2
         r += 1
 
-    # Perform k rounds of testing with different random bases
-    for i in range(k):
+    # Perform num rounds of testing with different random bases
+    for i in range(num_rounds_k):
         a = random.randint(2, n - 2)
         x = pow(a, d, n)
         if x == 1 or x == n - 1:
@@ -41,15 +42,15 @@ def generate_prime(start=10**50, end=10**51):
 class RSA:
     def __init__(self, e: int, n: int = None, d: int = None):
         #Initialize RSA object with a public exponent e, and optionally n and d.
-        self.e = e
-        self.n = n
-        self.d = d
+        self.public_expo = e #public exponent
+        self.n = n # modulus
+        self.private_expo = d # private exponent
 
         # Generate p, q, n, and d if not already provided
-        if self.n is None and self.d is None:
-            self._generate_keys()
+        if self.n is None and self.private_expo is None:
+            self.generate_keys()
 
-    def _generate_keys(self):
+    def generate_keys(self):
         #Generate RSA key components p, q, n, and d.
         #generate two large, distinct prime numbers
         self.p = generate_prime()
@@ -60,12 +61,12 @@ class RSA:
 
         self.n = self.p * self.q
         self.phi_n = (self.p - 1) * (self.q - 1)
-        self.d = self._mod_inverse(self.e, self.phi_n)
+        self.d = self.mod_inverse(self.public_expo, self.phi_n)
 
-    def _mod_inverse(self, e, phi_n):
+    def mod_inverse(self, public_expo, phi_n):
         #modular inverse of e mod phi_n using Extended Euclidean Algorithm.
         t, new_t = 0, 1
-        r, new_r = phi_n, e
+        r, new_r = phi_n, public_expo
 
         while new_r != 0:
             quotient = r // new_r
@@ -82,7 +83,7 @@ class RSA:
         #Encrypt plaintext integer using the public key.
         if self.n is None:
             raise ValueError("Public modulus (n) is required for encryption.")
-        return pow(plaintext, self.e, self.n)
+        return pow(plaintext, self.public_expo, self.n)
 
     def decrypt(self, ciphertext: int) -> int:
         #Decrypt ciphertext integer using the private key."""
@@ -92,13 +93,13 @@ class RSA:
 
 
 if __name__ == '__main__':
-    e = 65537  # Common public exponent
+    public_expo = 65537  # Common public exponent (e)
 
     # Initialize RSA and generate keys
-    rsa_instance = RSA(e)
+    rsa_instance = RSA(public_expo)
 
     print(f"Generated primes p: {rsa_instance.p}, q: {rsa_instance.q}")
-    print(f"Public key (e, n): ({rsa_instance.e}, {rsa_instance.n})")
+    print(f"Public key (e, n): ({rsa_instance.public_expo}, {rsa_instance.n})")
     print(f"Private key (d, n): ({rsa_instance.d}, {rsa_instance.n})")
 
     plaintext = 1234567890123456789012345678901234567890

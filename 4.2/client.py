@@ -44,9 +44,9 @@ class Client:
         # Receive server's RSA public key
         print("Receiving server's public RSA key...")
         public_key = self.client.recv(1024).decode('utf-8')
-        e, n = [int(x) for x in public_key.split('|')]
-        rsa = RSA(e, n)  # RSA instance for encryption with server's public key
-        print(f"Received public key: (e={e}, n={n})")
+        public_expo, n = [int(x) for x in public_key.split('|')]
+        rsa = RSA(public_expo, n)  # RSA instance for encryption with server's public key
+        print(f"Received public key: (e={public_expo}, n={n})")
 
         # Generate a new AES key for communication
         key = Key()
