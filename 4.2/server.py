@@ -47,7 +47,7 @@ class Server:
         self.client.sendall(encrypted_message)
 
     def exchange_keys(self):
-        # Handles key exchange with the client using RSA encryption
+        # key exchange with the client using RSA 
         # Send server's RSA public key to client
         public_key_str = f"{self.public_key[0]}|{self.public_key[1]}"
         self.client.sendall(public_key_str.encode('utf-8'))
@@ -55,7 +55,7 @@ class Server:
         # Receive encrypted AES key from client
         encrypted_aes_key = int(self.client.recv(1024).decode('utf-8'))
         aes_key_as_int = self.rsa.decrypt(encrypted_aes_key)
-        self.key_bytes = aes_key_as_int.to_bytes((aes_key_as_int.bit_length() + 7) // 8, byteorder='big')
+        self.key_bytes = aes_key_as_int.to_bytes((aes_key_as_int.bit_length() + 7) // 8, byteorder='big')   # convert AES key (calculation determines byte length)
         print(f"Established AES session key: {self.key_bytes}")
 
     def hash_message(self, message: str, key: bytes) -> str:
@@ -88,13 +88,13 @@ if __name__ == '__main__':
             # Receive and process client message
             received_data = server.receive()
             try:
-                received_message, received_hash = received_data.split("|")
+                received_message, received_hash = received_data.split("|") # split data into two strings
             except ValueError:
                 print("Error: Received data format is incorrect.")
                 break
 
             # Verify message integrity
-            recalculated_hash = server.hash_message(received_message, server.key_bytes)
+            recalculated_hash = server.hash_message(received_message, server.key_bytes)# orignal message hashed with key now should be the same as the recieved hash
             if recalculated_hash != received_hash:
                 print("Warning: Message integrity compromised.")
                 break

@@ -65,9 +65,10 @@ class RSA:
 
     def mod_inverse(self, public_expo, phi_n):
         #modular inverse of e mod phi_n using Extended Euclidean Algorithm.
-        t, new_t = 0, 1
+        t, new_t = 0, 1 
         r, new_r = phi_n, public_expo
 
+        #finding t for expression: e * t congruent 1(mod phi n)
         while new_r != 0:
             quotient = r // new_r
             t, new_t = new_t, t - quotient * new_t

@@ -44,7 +44,7 @@ class Client:
         # Receive server's RSA public key
         print("Receiving server's public RSA key...")
         public_key = self.client.recv(1024).decode('utf-8')
-        public_expo, n = [int(x) for x in public_key.split('|')]
+        public_expo, n = [int(x) for x in public_key.split('|')] #(e | n)
         rsa = RSA(public_expo, n)  # RSA instance for encryption with server's public key
         print(f"Received public key: (e={public_expo}, n={n})")
 
@@ -54,7 +54,7 @@ class Client:
         print(f"Generated AES key (bytes): {self.aes_key}")
 
         # Encrypt AES key with RSA and send it to the server
-        aes_key_as_int = int.from_bytes(self.aes_key, byteorder='big')
+        aes_key_as_int = int.from_bytes(self.aes_key, byteorder='big') # convert AES key bytes -> int 
         encrypted_aes_key = rsa.encrypt(aes_key_as_int)
         print(f"Encrypted AES key to send: {encrypted_aes_key}")
         self.client.sendall(str(encrypted_aes_key).encode('utf-8'))
