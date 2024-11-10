@@ -1,5 +1,6 @@
 import random
 from math import gcd
+import hashlib
 
 
 def is_prime(n, num_rounds_k=5):
@@ -91,6 +92,15 @@ class RSA:
         if self.d is None:
             raise ValueError("Private exponent (d) is required for decryption.")
         return pow(ciphertext, self.d, self.n)
+    
+    def sign(self, message_hash):
+        """Sign a message hash using the RSA private key."""
+        return self.decrypt(int.from_bytes(message_hash, byteorder='big'))
+
+    def verify(self, signature, message_hash):
+        """Verify a signature using the RSA public key."""
+        hash_from_signature = self.encrypt(signature)
+        return message_hash == hash_from_signature.to_bytes(len(message_hash), byteorder='big')
 
 
 if __name__ == '__main__':
@@ -103,16 +113,22 @@ if __name__ == '__main__':
     print(f"Public key (e, n): ({rsa_instance.public_expo}, {rsa_instance.n})")
     print(f"Private key (d, n): ({rsa_instance.d}, {rsa_instance.n})")
 
-    plaintext = 1234567890123456789012345678901234567890
-    print(f"Original message: {plaintext}")
+    # Read a message from a file
+    with open('message.txt', 'r') as file:
+        message = file.read().strip()
+    print(f"Original message: {message}")
 
-    # Encrypt the message
-    ciphertext = rsa_instance.encrypt(plaintext)
-    print(f"Encrypted message: {ciphertext}")
+    # Hash the message
+    message_hash = hashlib.sha256(message.encode()).digest()
+    print(f"Message hash: {message_hash.hex()}")
 
-    # Decrypt the message
-    decrypted_message = rsa_instance.decrypt(ciphertext)
-    print(f"Decrypted message: {decrypted_message}")
+    # Sign the hash
+    signature = rsa_instance.sign(message_hash)
+    print(f"Signature: {signature}")
 
-    # Verify decryption
-    assert plaintext == decrypted_message, "Decryption failed!"
+    # Verify the signature
+    verification_result = rsa_instance.verify(signature, message_hash)
+    if verification_result:
+        print("Verification result: Success")
+    else:
+        print("Verification result: Failure")
