@@ -1,119 +1,109 @@
 
 import socket
 from cryptography.hazmat.primitives import hashes
-from aes import AES  # AES encryption
-from key import Key  # Key generation
-from rsa import RSA  # RSA encryption for key exchange
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from aes import AES
+from key import Key
+from rsa import RSA
 
 
 class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.key_bytes = None  # AES key in bytes
+        self.client = None
+
+        self.rsa = RSA(65537)  
+        self.public_key = (self.rsa.e, self.rsa.n)
+        self.private_key = self.rsa.d
+        self.server_public_key = None 
+       
+        
 
     def connect(self):
-        # Establishes a connection to the server
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.host, self.port))
-        print(f"Connected to server at {self.host}:{self.port}")
 
-    def send(self, message: str, hash_value: str):
-        # Encrypts and sends a message with its hash for integrity
-        message_with_hash = message + "|" + hash_value
-        cryptor = AES(self.key_bytes)  # AES instance with the established key
-        encrypted_message = cryptor.encrypt(message_with_hash)
-        self.client.sendall(encrypted_message)
+    def send(self, message: str):
+        # Sign the message with the client's private key
+        message_bytes = message.encode('utf-8')
+        signature = self.rsa.sign(message_bytes)
+        data = f"{message}|{signature}"
+        self.client.sendall(data.encode('utf-8'))
+        print("Sent signed message to server.")
 
     def receive(self, buffer_size=1024):
-        # Receives and decrypts messages from the server
-        encrypted_message = self.client.recv(buffer_size)
-        cryptor = AES(self.key_bytes)  # AES instance with the established key
-        decrypted_message = cryptor.decrypt(encrypted_message)
-        return decrypted_message
+        # Receive a message and its signature
+        data = self.client.recv(2048).decode('utf-8')
+        message, signature = data.split("|")
+        message = message.encode('utf-8')
+        signature = int(signature)
 
-    def hash_message(self, message: str, key: bytes) -> str:
-        # Generates SHA-256 hash for the message and key combined
+        # Verify the signature using the server's public key
+        is_valid = self.server_public_key.verify(signature, message)
+        if is_valid:
+            print("Signature verified successfully.")
+            return message.decode('utf-8')
+        else:
+            print("Signature verification failed.")
+            return None
+
+    def hash_message(self, message: str, key: bytes) -> str:  #take both message as well as the key from file 
         digest = hashes.Hash(hashes.SHA256())
         combined = message.encode('ascii') + key
         digest.update(combined)
         return digest.finalize().hex()
 
     def exchange_keys(self):
-        # Handles key exchange using RSA encryption
-        # Receive server's RSA public key
-        print("Receiving server's public RSA key...")
-        public_key = self.client.recv(1024).decode('utf-8')
-        public_expo, n = [int(x) for x in public_key.split('|')] #(e | n)
-        rsa = RSA(public_expo, n)  # RSA instance for encryption with server's public key
-        print(f"Received public key: (e={public_expo}, n={n})")
+        # Receive the server's public key
+        server_key_data = self.client.recv(1024).decode('utf-8')
+        e, n = map(int, server_key_data.split('|'))
+        self.server_public_key = RSA(e, n)
+        print("Received server's public key.")
 
-        # Generate a new AES key for communication
-        key = Key()
-        self.aes_key = key.gen(256)
-        print(f"Generated AES key (bytes): {self.aes_key}")
-
-        # Encrypt AES key with RSA and send it to the server
-        aes_key_as_int = int.from_bytes(self.aes_key, byteorder='big') # convert AES key bytes -> int 
-        encrypted_aes_key = rsa.encrypt(aes_key_as_int)
-        print(f"Encrypted AES key to send: {encrypted_aes_key}")
-        self.client.sendall(str(encrypted_aes_key).encode('utf-8'))
-        self.key_bytes = self.aes_key  # Store AES key for session encryption
-        return self.key_bytes
+        # Send the client's public key to the server
+        self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
+        print("Sent client's public key to server.")
 
     def close(self):
-        # Closes the client socket
         self.client.close()
 
 
 if __name__ == '__main__':
-    HOST, PORT = '127.0.0.1', 6500  # Default server address
+    HOST, PORT = '10.108.92.214', 9999
+
 
     client = Client(HOST, PORT)
     client.connect()
-    key_bytes = client.exchange_keys()
+    print(f"Connected to server at {HOST}:{PORT}")
+    client.exchange_keys()
+   
 
-    if key_bytes is None:
-        print("Error: Key exchange failed.")
-        client.close()
-        exit(1)
-
-    # Initial message
-    intro_message = "Client has connected!"
-    intro_hash = client.hash_message(intro_message, key_bytes)
-    client.send(intro_message, intro_hash)
-    print(f"Sent message: {intro_message}")
+    intro = "Client has connected!"
+    client.send(intro)
+    print(f"Sent message: {intro}")
 
     while True:
-        # Receive and process server message
-        received_data = client.receive()
-        try:
-            received_message, received_hash = received_data.split("|")
-        except ValueError:
-            print("Error: Received data format is incorrect.")
-            break
+            received_message = client.receive()
+            if received_message is None:
+                print("Message verification failed or message is empty.")
+                break
+            print(f"Client: {received_message}")
+
+
+            if received_message.lower() == 'end chat':
+                print("Chat ended by server.")
+                break
         
-        # Verify message integrity
-        recalculated_hash = client.hash_message(received_message, key_bytes)
-        if recalculated_hash != received_hash:
-            print("Warning: Message integrity compromised.")
-            break
-        else:
-            print(f"Received message: {received_message} (Hash: {received_hash})")
+    
+            # read for message
+            message_to_send = input("You: ")
+            client.send(message_to_send)
 
-        # Check if the server ended the chat
-        if received_message.lower() == 'end chat':
-            print("Chat ended by server.")
-            break
-
-        # Send new message to server
-        message_to_send = input("You: ")
-        message_hash = client.hash_message(message_to_send, key_bytes)
-        client.send(message_to_send, message_hash)
-
-        if message_to_send.lower() == 'end chat':
-            print("Chat ended by client.")
-            break
+    
+            # terminate if sent message is "end chat"
+            if message_to_send.lower() == 'end chat':
+                print("Chat ended by client.")
+                break
 
     client.close()
-
