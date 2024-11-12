@@ -1,4 +1,3 @@
-
 import socket
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -55,15 +54,27 @@ class Server:
         self.client.sendall(data.encode('utf-8'))
         print("Sent signed message to client.")
 
-    
-    def hash_message(self, message: str, key: bytes) -> str:  #take both message as well as the key from file 
+    def hash_message(self, message: str, key: bytes) -> str:
+        """Generate and sign HMAC."""
         digest = hashes.Hash(hashes.SHA256())
         combined = message.encode('ascii') + key
         digest.update(combined)
-        return digest.finalize().hex()
+        hmac = digest.finalize()
+        
+        # Sign the HMAC with the server's private key
+        signature = self.rsa.sign(hmac)
+        return f"{hmac.hex()}|{signature}"
+
+    def verify_hmac(self, hmac_signature: str) -> bool:
+        """Verify HMAC using the client's public key."""
+        hmac, signature = hmac_signature.split("|")
+        hmac = bytes.fromhex(hmac)
+        signature = int(signature)
+        return self.client_public_key.verify(signature, hmac)
+
 
     def exchange_keys(self):
-         # Send the server's public key to the client
+        # Send the server's public key to the client
         self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
         print("Sent server's public key to client.")
 
@@ -80,7 +91,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.108.92.214', 9999
+    HOST, PORT = '192.168.56.1', 9999
 
     server = Server(HOST, PORT)
     server.start()
@@ -120,4 +131,3 @@ if __name__ == '__main__':
     
 
     server.close()
-    
