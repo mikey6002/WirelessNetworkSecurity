@@ -27,17 +27,12 @@ def is_prime(n, k=5):
             return False
     return True
 
-def generate_prime(start=150, end=10**51):
+def generate_prime(start=1e50, end=1e51):
     #refactored to generate large primes
     while True:
         num = random.randint(start, end)
         if is_prime(num):
             return num
-
-
-#def read_file(file_path: str) -> bytes:
- #   with open(file_path, 'rb') as file:
-#        return file.read()
 
 class RSA:
 
@@ -125,10 +120,6 @@ if __name__ == '__main__':
 
     plaintext = 74934551197837615838790984411286222358639449529875366475640826113004513675453  # Message to encrypt (AES key length)
     message = b"Hello, this is a test message."
-
-
-#    file_path = 'path/to/your/file.txt'
-#   message = read_file(file_path)
 
     # Sign the message
     signature = cryptor.sign(message)

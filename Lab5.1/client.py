@@ -1,3 +1,4 @@
+
 import socket
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -47,24 +48,11 @@ class Client:
             print("Signature verification failed.")
             return None
 
-    def hash_message(self, message: str, key: bytes) -> str:
-        """Generate and sign HMAC."""
+    def hash_message(self, message: str, key: bytes) -> str:  #take both message as well as the key from file 
         digest = hashes.Hash(hashes.SHA256())
         combined = message.encode('ascii') + key
         digest.update(combined)
-        hmac = digest.finalize()
-        
-        # Sign the HMAC with the client's private key
-        signature = self.rsa.sign(hmac)
-        return f"{hmac.hex()}|{signature}"
-
-    def verify_hmac(self, hmac_signature: str) -> bool:
-        """Verify HMAC using the server's public key."""
-        hmac, signature = hmac_signature.split("|")
-        hmac = bytes.fromhex(hmac)
-        signature = int(signature)
-        return self.server_public_key.verify(signature, hmac)
-
+        return digest.finalize().hex()
 
     def exchange_keys(self):
         # Receive the server's public key
@@ -82,7 +70,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '127.0.0.1', 9999
+    HOST, PORT = '10.108.92.214', 9999
 
 
     client = Client(HOST, PORT)
