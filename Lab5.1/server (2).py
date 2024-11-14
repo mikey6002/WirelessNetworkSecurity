@@ -2,8 +2,6 @@
 import socket
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from aes import AES
-from key import Key
 from rsa import RSA
 
 
@@ -80,7 +78,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.108.92.214', 9999
+    HOST, PORT = '10.110.61.212', 9999
 
     server = Server(HOST, PORT)
     server.start()

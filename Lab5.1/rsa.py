@@ -27,7 +27,7 @@ def is_prime(n, k=5):
             return False
     return True
 
-def generate_prime(start=1e50, end=1e51):
+def generate_prime(start=10**50, end=10**51):
     #refactored to generate large primes
     while True:
         num = random.randint(start, end)
