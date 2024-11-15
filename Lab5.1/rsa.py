@@ -89,7 +89,7 @@ class RSA:
         #Decrypt the ciphertext message (integer) using the private key.
         if self.d is None:
             raise ValueError("Private exponent (d) is required for decryption")
-        return pow(ciphertext, self.d, self.n)
+        return pow(ciphertext, self.d, self.n) #sign = hash^d mod n
 
     def sign(self, message: bytes) -> int:
         #Createing a digital signature by hashing and encrypting the hash with the private key

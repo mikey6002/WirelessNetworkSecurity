@@ -31,9 +31,9 @@ class Server:
     
     def receive(self, buffer_size=1024):
         # Receive a message and its signature
-        data = self.client.recv(2048).decode('utf-8')
-        message, signature = data.split("|")
-        message = message.encode('utf-8')
+        data = self.client.recv(2048).decode('utf-8')# bytes to string 
+        message, signature = data.split("|") # split recieved data into message and signature
+        message = message.encode('utf-8') # encode message into bytes (sig req original message) 
         signature = int(signature)
 
         # Verify the signature using the client's public key
