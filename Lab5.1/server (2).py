@@ -53,13 +53,6 @@ class Server:
         self.client.sendall(data.encode('utf-8'))
         print("Sent signed message to client.")
 
-    
-    def hash_message(self, message: str, key: bytes) -> str:  #take both message as well as the key from file 
-        digest = hashes.Hash(hashes.SHA256())
-        combined = message.encode('ascii') + key
-        digest.update(combined)
-        return digest.finalize().hex()
-
     def exchange_keys(self):
          # Send the server's public key to the client
         self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
@@ -78,7 +71,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.110.61.212', 9999
+    HOST, PORT = '10.109.21.177', 9999
 
     server = Server(HOST, PORT)
     server.start()

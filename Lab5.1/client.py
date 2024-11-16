@@ -68,7 +68,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.110.61.212', 9999
+    HOST, PORT = '10.109.21.177', 9999
 
 
     client = Client(HOST, PORT)
