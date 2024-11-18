@@ -85,6 +85,7 @@ class RSA:
             raise ValueError("Private exponent (n) is required for decryption")
         return pow(plaintext, self.e, self.n)
 
+    #applies private key to the hash signature to get the original message
     def decrypt(self, ciphertext: int) -> int:
         #Decrypt the ciphertext message (integer) using the private key.
         if self.d is None:
@@ -95,11 +96,11 @@ class RSA:
         #Createing a digital signature by hashing and encrypting the hash with the private key
         # Hash the message using SHA-256
         message_hash = int.from_bytes(hashlib.sha256(message).digest(), byteorder='big')
-        # Sign by encrypting the hash with the private key (d, n)
+        # Sign by decrypting the hash with the private key (d, n)
         return self.decrypt(message_hash)
 
+     #Verify a digital signature by decrypting it and comparing with the message hash
     def verify(self, signature: int, message: bytes) -> bool:
-        #Verify a digital signature by decrypting it and comparing with the message hash
         # Hash the message
         message_hash = int.from_bytes(hashlib.sha256(message).digest(), byteorder='big')
         # Decrypt the signature with the public key (encrypt function) to retrieve the hash

@@ -34,7 +34,7 @@ class Server:
         data = self.client.recv(2048).decode('utf-8')# bytes to string 
         message, signature = data.split("|") # split recieved data into message and signature
         message = message.encode('utf-8') # encode message into bytes (sig req original message) 
-        signature = int(signature)
+        signature = int(signature) # convert signature to int
 
         # Verify the signature using the client's public key
         is_valid = self.client_public_key.verify(signature, message)
@@ -46,12 +46,11 @@ class Server:
             return None
     
     def send(self, message: str):
-        # Sign the message with the server's private key
-        message_bytes = message.encode('utf-8')
-        signature = self.rsa.sign(message_bytes)
+        message_bytes = message.encode('utf-8') 
+        signature = self.rsa.sign(message_bytes) # Sign the message with the server's private key
         data = f"{message}|{signature}"
-        self.client.sendall(data.encode('utf-8'))
-        print("Sent signed message to client.")
+        self.client.sendall(data.encode('utf-8')) # send signed message to client
+        print("Sent signed message to client.") 
 
     def exchange_keys(self):
          # Send the server's public key to the client
@@ -60,8 +59,8 @@ class Server:
 
         # Receive the client's public key
         client_key_data = self.client.recv(1024).decode('utf-8')
-        e, n = map(int, client_key_data.split('|'))
-        self.client_public_key = RSA(e, n)
+        e, n = map(int, client_key_data.split('|')) #converts both e and n to int
+        self.client_public_key = RSA(e, n) #initialize client's public key used to verify messages from client
         print("Received client's public key.")
 
     
