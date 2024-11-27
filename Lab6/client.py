@@ -1,6 +1,7 @@
 import socket
 from rsa import RSA
 from CA import CA
+from hashlib import sha256
 
 
 class Client:
@@ -28,7 +29,7 @@ class Client:
         result = CA.verify(certificate, self.recognized_cas)
         print(f"Debug: Certificate validation result: {result}")  # Debug log
         return result
-
+        
     def exchange_keys(self):
         try:
             # Receive the server's certificate
@@ -107,10 +108,11 @@ class Client:
 if __name__ == '__main__':
     HOST, PORT = '192.168.1.17', 6500
 
-    # Load static CA public key
-    with open("ca_keys.json", "r") as f:
-        ca_keys = json.load(f)
-    recognized_cas = [tuple(ca_keys["public_key"])]
+    e = 65537
+    # Initialize the CA
+    rsa_instance = RSA(e)
+    ca = CA(rsa_instance)
+    recognized_cas = [ca.public_key]
 
     client = Client(HOST, PORT, recognized_cas)
     client.connect()

@@ -1,6 +1,7 @@
 import socket
 from rsa import RSA
 from CA import CA
+from hashlib import sha256
 
 
 class Server:
@@ -100,9 +101,10 @@ class Server:
 
 if __name__ == '__main__':
     HOST, PORT = '192.168.1.17', 6500
-
+    e = 65537
     # Initialize the CA
-    ca = CA()
+    rsa_instance = RSA(e)
+    ca = CA(rsa_instance)
 
     # Initialize the server with the CA
     server = Server(HOST, PORT, ca)
