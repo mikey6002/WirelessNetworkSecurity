@@ -1,7 +1,7 @@
 import socket
-import json
 from rsa import RSA
 from CA import CA
+
 
 class Client:
     def __init__(self, host, port, recognized_cas):
@@ -18,23 +18,24 @@ class Client:
     def connect(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.host, self.port))
+        print(f"Debug: Connected to server at {self.host}:{self.port}")  # Debug log
 
     def validate_certificate(self, certificate):
-        """
-        Validate the server's certificate, ensuring it's from a trusted CA.
-        """
         if "signature" not in certificate or "server_public_key" not in certificate:
-            print("Invalid certificate format.")
+            print("Debug: Invalid certificate format.")  # Debug log
             return False
-        return CA.verify(certificate, self.recognized_cas)
+        print(f"Debug: Validating certificate: {certificate}")  # Debug log
+        result = CA.verify(certificate, self.recognized_cas)
+        print(f"Debug: Certificate validation result: {result}")  # Debug log
+        return result
 
     def exchange_keys(self):
-        """
-        Validate the server's certificate, and exchange public keys.
-        """
-        # Receive the server's certificate
-        certificate_data = self.client.recv(1024).decode('utf-8')
         try:
+            # Receive the server's certificate
+            certificate_data = self.client.recv(1024).decode('utf-8')
+            print(f"Debug: Received certificate data: {certificate_data}")  # Debug log
+
+            # Parse the certificate
             parts = certificate_data.split('|')
             if len(parts) != 4:
                 raise ValueError("Certificate format mismatch")
@@ -43,68 +44,78 @@ class Client:
                 'issuer': parts[2],
                 'signature': int(parts[3])
             }
+            print(f"Debug: Parsed certificate: {certificate}")  # Debug log
+
+            # Validate the certificate
+            if not self.validate_certificate(certificate):
+                print("Debug: Certificate verification failed. Closing connection.")  # Debug log
+                self.client.close()
+                raise ValueError("Server certificate is invalid or untrusted.")
+
+            print("Debug: Server certificate validated successfully.")  # Debug log
+            self.server_public_key = RSA(certificate["server_public_key"][0], certificate["server_public_key"][1])
+
+            # Send the client's public key
+            self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
+            print(f"Debug: Sent client public key: {self.public_key}")  # Debug log
+
         except Exception as e:
-            print(f"Failed to parse server certificate: {e}")
-            self.client.close()
-            return
-
-
-        # Validate the server's certificate
-        if not self.validate_certificate(certificate):
-            raise ValueError("Server certificate is invalid or untrusted.")
-
-        print("Server certificate validated successfully.")
-        self.server_public_key = RSA(certificate["server_public_key"][0], certificate["server_public_key"][1])
-
-        # Send the client's public key to the server
-        self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
-        print("Sent client's public key to server.")
+            print(f"Debug: Error during key exchange: {e}")  # Debug log
+            self.close()
+            raise
 
     def send(self, message: str):
-        """
-        Sign the message with the client's private key and send.
-        """
         message_bytes = message.encode('utf-8')
         signature = self.rsa.sign(message_bytes)
         data = f"{message}|{signature}"
-        self.client.sendall(data.encode('utf-8'))
-        print("Sent signed message to server.")
+        try:
+            self.client.sendall(data.encode('utf-8'))
+            print(f"Debug: Sent signed message: {message}")  # Debug log
+        except socket.error as e:
+            print(f"Debug: Socket error while sending: {e}")  # Debug log
+            self.close()
+            raise
 
     def receive(self, buffer_size=1024):
-        """
-        Receive a message and verify its signature.
-        """
-        data = self.client.recv(2048).decode('utf-8')
-        message, signature = data.split("|")
-        message = message.encode('utf-8')
-        signature = int(signature)
+        try:
+            data = self.client.recv(2048).decode('utf-8')
+            if not data.strip():
+                print("Debug: Received empty data.")  # Debug log
+                return None
 
-        # Verify the signature using the server's public key
-        is_valid = self.server_public_key.verify(signature, message)
-        if is_valid:
-            print("Signature verified successfully.")
-            return message.decode('utf-8')
-        else:
-            print("Signature verification failed.")
+            message, signature = data.split("|")
+            message = message.encode('utf-8')
+            signature = int(signature)
+
+            is_valid = self.server_public_key.verify(signature, message)
+            print(f"Debug: Signature verification result: {is_valid}")  # Debug log
+            if is_valid:
+                return message.decode('utf-8')
+            else:
+                print("Debug: Signature verification failed.")  # Debug log
+                return None
+        except Exception as e:
+            print(f"Debug: Error during message processing: {e}")  # Debug log
             return None
 
     def close(self):
-        self.client.close()
+        if self.client:
+            print("Debug: Closing client connection.")  # Debug log
+            self.client.close()
 
 
 if __name__ == '__main__':
     HOST, PORT = '192.168.1.17', 6500
 
-    # Simulate a trusted CA and server certificate generation
-    ca = CA()
-    recognized_cas = [ca.public_key]
+    # Load static CA public key
+    with open("ca_keys.json", "r") as f:
+        ca_keys = json.load(f)
+    recognized_cas = [tuple(ca_keys["public_key"])]
 
-    # Client connects to server
     client = Client(HOST, PORT, recognized_cas)
     client.connect()
     print(f"Connected to server at {HOST}:{PORT}")
 
-    # Validate certificate and exchange keys
     try:
         client.exchange_keys()
         print("Key exchange successful.")
@@ -124,16 +135,14 @@ if __name__ == '__main__':
                 print("Chat ended by server.")
                 break
 
-            # Read for message
             message_to_send = input("You: ")
             client.send(message_to_send)
 
-            # Terminate if sent message is "end chat"
             if message_to_send.lower() == 'end chat':
                 print("Chat ended by client.")
                 break
 
     except Exception as e:
-        print(f"Error during key exchange or communication: {e}")
+        print(f"Debug: Error during key exchange or communication: {e}")  # Debug log
 
     client.close()
