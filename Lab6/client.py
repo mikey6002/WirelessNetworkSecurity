@@ -1,29 +1,69 @@
-
 import socket
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import json
 from rsa import RSA
-
+from CA import CA
 
 class Client:
-    def __init__(self, host, port):
+    def __init__(self, host, port, recognized_cas):
         self.host = host
         self.port = port
         self.client = None
 
-        self.rsa = RSA(65537)  
+        self.rsa = RSA(65537)
         self.public_key = (self.rsa.e, self.rsa.n)
         self.private_key = self.rsa.d
-        self.server_public_key = None 
-       
-        
+        self.server_public_key = None
+        self.recognized_cas = recognized_cas  # List of recognized CA public keys
 
     def connect(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.host, self.port))
 
+    def validate_certificate(self, certificate):
+        """
+        Validate the server's certificate, ensuring it's from a trusted CA.
+        """
+        if "signature" not in certificate or "server_public_key" not in certificate:
+            print("Invalid certificate format.")
+            return False
+        return CA.verify(certificate, self.recognized_cas)
+
+    def exchange_keys(self):
+        """
+        Validate the server's certificate, and exchange public keys.
+        """
+        # Receive the server's certificate
+        certificate_data = self.client.recv(1024).decode('utf-8')
+        try:
+            parts = certificate_data.split('|')
+            if len(parts) != 4:
+                raise ValueError("Certificate format mismatch")
+            certificate = {
+                'server_public_key': (int(parts[0]), int(parts[1])),
+                'issuer': parts[2],
+                'signature': int(parts[3])
+            }
+        except Exception as e:
+            print(f"Failed to parse server certificate: {e}")
+            self.client.close()
+            return
+
+
+        # Validate the server's certificate
+        if not self.validate_certificate(certificate):
+            raise ValueError("Server certificate is invalid or untrusted.")
+
+        print("Server certificate validated successfully.")
+        self.server_public_key = RSA(certificate["server_public_key"][0], certificate["server_public_key"][1])
+
+        # Send the client's public key to the server
+        self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
+        print("Sent client's public key to server.")
+
     def send(self, message: str):
-        # Sign the message with the client's private key
+        """
+        Sign the message with the client's private key and send.
+        """
         message_bytes = message.encode('utf-8')
         signature = self.rsa.sign(message_bytes)
         data = f"{message}|{signature}"
@@ -31,7 +71,9 @@ class Client:
         print("Sent signed message to server.")
 
     def receive(self, buffer_size=1024):
-        # Receive a message and its signature
+        """
+        Receive a message and verify its signature.
+        """
         data = self.client.recv(2048).decode('utf-8')
         message, signature = data.split("|")
         message = message.encode('utf-8')
@@ -46,62 +88,52 @@ class Client:
             print("Signature verification failed.")
             return None
 
-    def hash_message(self, message: str, key: bytes) -> str:  #take both message as well as the key from file 
-        digest = hashes.Hash(hashes.SHA256())
-        combined = message.encode('ascii') + key
-        digest.update(combined)
-        return digest.finalize().hex()
-
-    def exchange_keys(self):
-        # Receive the server's public key
-        server_key_data = self.client.recv(1024).decode('utf-8')
-        e, n = map(int, server_key_data.split('|'))
-        self.server_public_key = RSA(e, n)
-        print("Received server's public key.")
-
-        # Send the client's public key to the server
-        self.client.sendall(f"{self.public_key[0]}|{self.public_key[1]}".encode('utf-8'))
-        print("Sent client's public key to server.")
-
     def close(self):
         self.client.close()
 
 
 if __name__ == '__main__':
-    HOST, PORT = '10.109.21.177', 9999
+    HOST, PORT = '192.168.1.17', 6500
 
+    # Simulate a trusted CA and server certificate generation
+    ca = CA()
+    recognized_cas = [ca.public_key]
 
-    client = Client(HOST, PORT)
+    # Client connects to server
+    client = Client(HOST, PORT, recognized_cas)
     client.connect()
     print(f"Connected to server at {HOST}:{PORT}")
-    client.exchange_keys()
-   
 
-    intro = "Client has connected!"
-    client.send(intro)
-    print(f"Sent message: {intro}")
+    # Validate certificate and exchange keys
+    try:
+        client.exchange_keys()
+        print("Key exchange successful.")
 
-    while True:
+        intro = "Client has connected!"
+        client.send(intro)
+        print(f"Sent message: {intro}")
+
+        while True:
             received_message = client.receive()
             if received_message is None:
                 print("Message verification failed or message is empty.")
                 break
             print(f"Client: {received_message}")
 
-
             if received_message.lower() == 'end chat':
                 print("Chat ended by server.")
                 break
-        
-    
-            # read for message
+
+            # Read for message
             message_to_send = input("You: ")
             client.send(message_to_send)
 
-    
-            # terminate if sent message is "end chat"
+            # Terminate if sent message is "end chat"
             if message_to_send.lower() == 'end chat':
                 print("Chat ended by client.")
                 break
+
+    except Exception as e:
+        print(f"Error during key exchange or communication: {e}")
 
     client.close()
